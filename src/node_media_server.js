@@ -19,6 +19,11 @@ class NodeMediaServer {
     this.config = config;
   }
 
+  clients() {
+    // Преобразуем Map в массив объектов сессий
+    return Array.from(context.sessions.values());
+  }
+
   run() {
     Logger.setLogType(this.config.logType);
     Logger.log(`Node Media Server v${Package.version}`);
@@ -106,7 +111,7 @@ class NodeMediaServer {
       this.nfs.stop();
     }
   }
-
+  
   getSession(id) {
     return context.sessions.get(id);
   }

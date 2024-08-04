@@ -1,14 +1,11 @@
-# Node-Media-Server
+# Daisy Media Server
 [![npm](https://img.shields.io/node/v/node-media-server.svg)](https://nodejs.org/en/)
 [![npm](https://img.shields.io/npm/v/node-media-server.svg)](https://npmjs.org/package/node-media-server)
 [![npm](https://img.shields.io/npm/dm/node-media-server.svg)](https://npmjs.org/package/node-media-server)
 [![npm](https://img.shields.io/npm/l/node-media-server.svg)](LICENSE) 
 [![Join the chat at https://gitter.im/Illuspas/Node-Media-Server](https://badges.gitter.im/Illuspas/Node-Media-Server.svg)](https://gitter.im/Illuspas/Node-Media-Server?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-A Node.js implementation of RTMP/HTTP-FLV/WS-FLV/HLS/DASH Media Server  
-
-# NodeMediaServer V3 
-[https://www.nodemedia.cn/product/node-media-server/](https://www.nodemedia.cn/product/node-media-server/)
+A Node.js implementation of RTMP Media Server partially compatible with RolyPolyLand client
 
 # Web Admin Panel Source
 [https://github.com/illuspas/Node-Media-Server-Admin](https://github.com/illuspas/Node-Media-Server-Admin)
@@ -266,7 +263,6 @@ const config = {
 
 # Event callback
 ```js
-......
 nms.run();
 nms.on('preConnect', (id, args) => {
   console.log('[NodeEvent on preConnect]', `id=${id} args=${JSON.stringify(args)}`);

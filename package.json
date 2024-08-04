@@ -1,7 +1,7 @@
 {
-  "name": "node-media-server",
+  "name": "daisy-media-server",
   "version": "2.7.0",
-  "description": "A Node.js implementation of RTMP Server",
+  "description": "A Node.js implementation of RTMP Media Server partially compatible with RolyPolyLand client",
   "bin": "bin/app.js",
   "main": "src/node_media_server.js",
   "scripts": {
@@ -10,19 +10,34 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/illuspas/Node-Media-Server.git"
+    "url": "git+https://github.com/youngive/daisy-media-server.git"
   },
   "keywords": [
     "rtmp",
-    "flv",
-    "server"
+    "daisy",
+    "media",
+    "server",
+    "dms"
   ],
-  "author": "Chen Mingliang",
+  "authors": [
+    {
+      "name": "Chen Mingliang"
+    },
+    {
+      "name": "youngive"
+    },
+    {
+      "name": "DevJjck"
+    },
+    {
+      "name": "daisy"
+    }
+  ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/illuspas/Node-Media-Server/issues"
+    "url": "https://github.com/youngive/daisy-media-server/issues"
   },
-  "homepage": "https://github.com/illuspas/Node-Media-Server#readme",
+  "homepage": "https://github.com/illuspas/daisy-media-server#readme",
   "dependencies": {
     "basic-auth-connect": "^1.0.0",
     "chalk": "^4.1.0",

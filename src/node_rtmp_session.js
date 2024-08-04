@@ -236,6 +236,11 @@ class NodeRtmpSession {
     }
   }
 
+  disconnect() {
+    // Logger.log('onDisconnect');
+    this.stop();
+  }
+  
   onSocketClose() {
     // Logger.log('onSocketClose');
     this.stop();
@@ -916,6 +921,36 @@ class NodeRtmpSession {
       case 'connect':
         this.onConnect(invokeMessage);
         break;
+      case '_SOO':
+        this.onSOO(invokeMessage);
+        break;
+      case '__resolve':
+        this.onResolve(invokeMessage);
+        break;
+      case '_P':
+        this.onP(invokeMessage);
+        break;
+      case '_LS':
+        this.onLS(invokeMessage);
+        break;
+      case '_S':
+        this.onS(invokeMessage);
+        break;
+      case '_SS':
+        this.onSS(invokeMessage);
+        break;
+      case '_SCA':
+        this.onSCA(invokeMessage);
+        break;
+      case '_NSF':
+        this.onNSF(invokeMessage);
+        break;
+      case '$':
+        this.onDollar(invokeMessage);
+        break;
+      case '_SCD':
+        this.onSCD(invokeMessage);
+        break;
       case 'releaseStream':
         break;
       case 'FCPublish':
@@ -945,6 +980,9 @@ class NodeRtmpSession {
         break;
       case 'receiveVideo':
         this.onReceiveVideo(invokeMessage);
+        break;
+      default:
+        Logger.log(`Unimplemented cmd ${invokeMessage.cmd}`);
         break;
     }
   }
@@ -988,6 +1026,34 @@ class NodeRtmpSession {
     packet.header.type = RTMP_TYPE_INVOKE;
     packet.header.stream_id = sid;
     packet.payload = AMF.encodeAmf0Cmd(opt);
+    packet.header.length = packet.payload.length;
+    let chunks = this.rtmpChunksCreate(packet);
+    this.socket.write(chunks);
+  }
+
+  sendCallMessage(sid, opt) {
+    let packet = RtmpPacket.create();
+    packet.header.fmt = RTMP_CHUNK_TYPE_0;
+    packet.header.cid = RTMP_CHANNEL_INVOKE;
+    packet.header.type = RTMP_TYPE_INVOKE;
+    packet.header.stream_id = sid;
+
+    // Формирование объекта rtmpCmdCall на основе opt
+    let rtmpCmdCall = {};
+
+    // Добавляем opt.cmd как ключ в rtmpCmdCall
+    rtmpCmdCall[opt.cmd] = [];
+
+    // Добавляем остальные свойства из opt в массив значений под ключом opt.cmd
+    for (let key in opt) {
+      if (key !== 'cmd') { // Пропускаем ключ 'cmd'
+        rtmpCmdCall[opt.cmd].push(key);
+      }
+    }
+
+    // Используем AMF.encodeAmf0Cmd для кодирования опций и rtmpCmdDecode
+    packet.payload = AMF.encodeAmf0Call(opt, rtmpCmdCall);
+
     packet.header.length = packet.payload.length;
     let chunks = this.rtmpChunksCreate(packet);
     this.socket.write(chunks);
@@ -1041,13 +1107,14 @@ class NodeRtmpSession {
     this.socket.write(chunks);
   }
 
-  respondConnect(tid) {
+  acceptConnection(tid) {
     let opt = {
       cmd: '_result',
       transId: tid,
       cmdObj: {
-        fmsVer: 'FMS/3,0,1,123',
-        capabilities: 31
+        fmsVer: 'FMS/5,0,15,5004',
+        capabilities: 255,
+        mode: 1
       },
       info: {
         level: 'status',
@@ -1059,6 +1126,33 @@ class NodeRtmpSession {
     this.sendInvokeMessage(0, opt);
   }
 
+  rejectConnection(tid, error_code) {
+    let opt = {
+      cmd: '_result',
+      transId: tid,
+      cmdObj: {
+        fmsVer: 'FMS/5,0,15,5004',
+        capabilities: 255,
+        mode: 1
+      },
+      info: {
+        level: 'status',
+        code: 'NetConnection.Connect.Rejected',
+        description: 'Connection rejected.',
+        objectEncoding: this.objectEncoding
+      }
+    };
+
+    // Добавляем error_code в info, если он передан
+    if (error_code !== undefined) {
+      opt.info.error_code = error_code;
+    }
+
+    this.sendInvokeMessage(0, opt);
+    this.reject();
+  }
+
+
   respondCreateStream(tid) {
     this.streams++;
     let opt = {
@@ -1068,6 +1162,32 @@ class NodeRtmpSession {
       info: this.streams
     };
     this.sendInvokeMessage(0, opt);
+  }
+
+  respondCmd(transId, args) {
+    let opt = {
+      cmd: "_result",
+      transId: transId,
+      cmdObj: null,
+      info: args
+    };
+
+    this.sendInvokeMessage(0, opt);
+  }
+  
+  call(methodName, ...args) {
+    let opt = {
+      cmd: methodName,
+      transId: 0,
+      cmdObj: null
+    };
+
+    // Добавляем ключи для каждого полученного аргумента
+    args.slice(1).forEach((arg, index) => {
+      opt[`gen${index + 1}`] = arg;
+    });
+
+    this.sendCallMessage(0, opt);
   }
 
   respondPlay() {
@@ -1091,21 +1211,70 @@ class NodeRtmpSession {
     this.pingInterval = setInterval(() => {
       this.sendPingRequest();
     }, this.pingTime);
-    this.sendWindowACK(5000000);
-    this.setPeerBandwidth(5000000, 2);
+    this.sendWindowACK(2500000);
+    this.setPeerBandwidth(2500000, 2);
     this.setChunkSize(this.outChunkSize);
-    this.respondConnect(invokeMessage.transId);
+    //this.accpetConnection(invokeMessage.transId);
     this.bitrateCache = {
       intervalMs: 1000,
       last_update: this.startTimestamp,
       bytes: 0,
     };
     Logger.log(`[rtmp connect] id=${this.id} ip=${this.ip} app=${this.appname} args=${JSON.stringify(invokeMessage.cmdObj)}`);
-    context.nodeEvent.emit('postConnect', this.id, invokeMessage.cmdObj);
+    context.nodeEvent.emit('postConnect', this.id, invokeMessage.transId, invokeMessage.uid, invokeMessage.sid, invokeMessage.ticket, invokeMessage.hwid);
   }
 
   onCreateStream(invokeMessage) {
     this.respondCreateStream(invokeMessage.transId);
+  }
+
+  onSOO(invokeMessage) {
+    context.nodeEvent.emit('_SOO', this.id, invokeMessage.soName, invokeMessage.opName, invokeMessage.args);
+  }
+  
+  onResolve(invokeMessage) {
+    context.nodeEvent.emit('__resolve', this.id, invokeMessage.name);
+  }
+
+  onP(invokeMessage) {
+    context.nodeEvent.emit('_P', this.id, invokeMessage.point, invokeMessage.tweenId, invokeMessage.emitEvent);
+  }
+
+  onLS(invokeMessage) {
+    console.log(JSON.stringify(invokeMessage));
+    context.nodeEvent.emit('_LS', this.id, invokeMessage.descriptor, invokeMessage.startPoint, invokeMessage.startState, function(result) {
+      this.respondCmd(invokeMessage.transId, result);
+    }.bind(this));
+  }
+
+  onS(invokeMessage) {
+    context.nodeEvent.emit('_S', this.id, invokeMessage.state);
+  }
+
+  onSS(invokeMessage) {
+    context.nodeEvent.emit('_SS', this.id, invokeMessage.hidden);
+  }
+
+  onSCA(invokeMessage) {
+    context.nodeEvent.emit('_SCA', this.id, invokeMessage.methodName, invokeMessage.data, function(result) {
+      this.respondCmd(invokeMessage.transId, result);
+    }.bind(this));
+  }
+
+  onNSF(invokeMessage) {
+    context.nodeEvent.emit('_NSF', this.id);
+  }
+
+  onDollar(invokeMessage) {
+    context.nodeEvent.emit('$', this.id, invokeMessage.methodName, invokeMessage.descr, invokeMessage.calledRoomId, invokeMessage.args, invokeMessage.uid, function(result) {
+      this.respondCmd(invokeMessage.transId, result);
+    }.bind(this));
+  }
+
+  onSCD(invokeMessage) {
+    context.nodeEvent.emit('_SCD', this.id, function(result) {
+      this.respondCmd(invokeMessage.transId, result);
+    }.bind(this));
   }
 
   onPublish(invokeMessage) {

@@ -4,14 +4,14 @@ ARG BUILD_DATE
 ARG VCS_REF
 
 LABEL org.label-schema.build-date="${BUILD_DATE}" \
-      org.label-schema.name="node-media-server" \
-      org.label-schema.description="A Node.js implementation of RTMP Server" \
-      org.label-schema.usage="https://github.com/illuspas/Node-Media-Server#readme" \
+      org.label-schema.name="daisy-media-server" \
+      org.label-schema.description="A Node.js implementation of RTMP Media Server partially compatible with RolyPolyLand client" \
+      org.label-schema.usage="https://github.com/youngive/daisy-media-server#readme" \
       org.label-schema.vcs-ref="${VCS_REF}" \
-      org.label-schema.vcs-url="https://github.com/illuspas/Node-Media-Server" \
-      org.label-schema.vendor="illuspas" \
-      org.label-schema.version="2.5.0" \
-      maintainer="https://github.com/illuspas"
+      org.label-schema.vcs-url="https://github.com/youngive/daisy-media-server" \
+      org.label-schema.vendor="youngive" \
+      org.label-schema.version="2.7.0" \
+      maintainer="https://github.com/youngive"
 
 WORKDIR /usr/src/app
 

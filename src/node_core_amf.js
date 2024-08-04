@@ -1,5 +1,6 @@
 /**
  * Created by delian on 3/12/14.
+ * Modded by DevJjck and youngive on 4/08/24
  * This module provides encoding and decoding of the AMF0 and AMF3 format
  */
 const Logger = require('./node_core_logger');
@@ -61,24 +62,25 @@ const amf0dRules = {
   0x11: amf0decSwitchAmf3
 };
 
-const amf0eRules = {
-  'string': amf0encString,
-  'integer': amf0encNumber,
-  'double': amf0encNumber,
-  'xml': amf0encXmlDoc,
-  'object': amf0encObject,
-  'array': amf0encArray,
-  'sarray': amf0encSArray,
-  'binary': amf0encString,
-  'true': amf0encBool,
-  'false': amf0encBool,
-  'undefined': amf0encUndefined,
-  'null': amf0encNull
+var amf0eRules = {
+  "longstring":       amf0encLongString,
+  "string":       amf0encString,
+  "integer":      amf0encNumber,
+  "double":       amf0encNumber,
+  "xml":          amf0encXmlDoc,
+  "object":       amf0encObject,
+  "array":        amf0encArray,
+  "sarray":       amf0encSArray,
+  "binary":       amf0encString,
+  "date":         amf0encDate,
+  "true":         amf0encBool,
+  "false":        amf0encBool,
+  "undefined":    amf0encUndefined,
+  "null":         amf0encNull
 };
 
 function amfType(o) {
   let jsType = typeof o;
-
   if (o === null) return 'null';
   if (jsType == 'undefined') return 'undefined';
   if (jsType == 'number') {
@@ -86,13 +88,17 @@ function amfType(o) {
     return 'double';
   }
   if (jsType == 'boolean') return o ? 'true' : 'false';
-  if (jsType == 'string') return 'string';
-  if (jsType == 'object') {
-    if (o instanceof Array) {
-      if (o.sarray) return 'sarray';
-      return 'array';
-    }
-    return 'object';
+  if (jsType == 'string') {
+    return o.length > 65535 ? 'longstring' : 'string';
+  }
+  if (jsType == "object") {
+    if (o.sarray)
+      return "sarray";
+    if (o instanceof Array)
+      return "array";
+    if (o instanceof Date)
+      return "date";
+    return "object";
   }
   throw new Error('Unsupported type!');
 }
@@ -549,9 +555,6 @@ function amf0decObject(buf) { // TODO: Implement references!
     let prop = amf0decUString(iBuf);
     // Logger.debug('Got field for property', prop);
     len += prop.len;
-    if (iBuf.length < prop.len) {
-      break;
-    }
     if (iBuf.slice(prop.len).readUInt8(0) == 0x09) {
       len++;
       // Logger.debug('Found the end property');
@@ -638,6 +641,7 @@ function amf0encUString(str) {
   return Buffer.concat([sLen, data]);
 }
 
+
 /**
  * AMF0 Encode String
  * @param str
@@ -649,6 +653,7 @@ function amf0encString(str) {
   buf.writeUInt16BE(str.length, 1);
   return Buffer.concat([buf, Buffer.from(str, 'utf8')]);
 }
+
 
 /**
  * AMF0 Decode Long String
@@ -680,7 +685,7 @@ function amf0encLongString(str) {
 function amf0decArray(buf) {
   //    let count = buf.readUInt32BE(1);
   let obj = amf0decObject(buf.slice(4));
-  return { len: 5 + obj.len, value: obj.value };
+  return { len: 4 + obj.len, value: obj.value };
 }
 
 /**
@@ -818,7 +823,7 @@ function amf0encTypedObj() {
  */
 function amfXDecodeOne(rules, buffer) {
   if (!rules[buffer.readUInt8(0)]) {
-    Logger.error('Unknown field', buffer.readUInt8(0));
+    Logger.log('Unimplemented field', buffer.readUInt8(0));
     return null;
   }
   return rules[buffer.readUInt8(0)](buffer);
@@ -947,8 +952,17 @@ const rtmpCmdCode = {
   'FCUnpublish': ['transId', 'cmdObj', 'streamName'],
   'FCSubscribe': ['transId', 'cmdObj', 'streamName'],
   'onFCPublish': ['transId', 'cmdObj', 'info'],
-  'connect': ['transId', 'cmdObj', 'args'],
-  'call': ['transId', 'cmdObj', 'args'],
+  'connect': ['transId', 'cmdObj', 'uid', 'sid', 'ticket', 'hwid'],
+  '$': ['transId', 'cmdObj', 'methodName', 'descr', 'calledRoomId', 'args', 'uid'],
+  '_SOO': ['transId', 'cmdObj', 'soName', 'opName', 'args'],
+  '__resolve': ['transId', 'cmdObj', 'name'],
+  '_LS': ['transId', 'cmdObj', 'descriptor', 'startPoint', 'startState'],
+  '_S': ['transId', 'cmdObj', 'state'],
+  '_SS': ['transId', 'cmdObj', 'hidden'],
+  '_SCA': ['transId', 'cmdObj', 'methodName', 'data'],
+  '_NSF': ['transId', 'cmdObj'],
+  '_SCD': ['transId', 'cmdObj'],
+  '_P': ['transId', 'cmdObj', 'point', 'tweenId', 'emitEvent'],
   'createStream': ['transId', 'cmdObj'],
   'close': ['transId', 'cmdObj'],
   'play': ['transId', 'cmdObj', 'streamName', 'start', 'duration', 'reset'],
@@ -995,7 +1009,7 @@ function decodeAmf0Data(dbuf) {
         }
       });
     } else {
-      Logger.error('Unknown command', resp);
+      Logger.log('Unimplemented command', resp);
     }
   }
 
@@ -1024,7 +1038,7 @@ function decodeAMF0Cmd(dbuf) {
       }
     });
   } else {
-    Logger.error('Unknown command', resp);
+    Logger.log('Unimplemented command', resp);
   }
   return resp;
 }
@@ -1043,7 +1057,23 @@ function encodeAMF0Cmd(opt) {
         data = Buffer.concat([data, amf0EncodeOne(opt[n])]);
     });
   } else {
-    Logger.error('Unknown command', opt);
+    Logger.log('Unimplemented command', opt);
+  }
+  // Logger.debug('Encoded as',data.toString('hex'));
+  return data;
+}
+
+function encodeAMF0Call(opt, code) {
+  let data = amf0EncodeOne(opt.cmd);
+
+  if (code[opt.cmd]) {
+    code[opt.cmd].forEach(function (n) {
+      if (opt.hasOwnProperty(n)) {
+        data = Buffer.concat([data, amf0EncodeOne(opt[n])]);
+      }
+    });
+  } else {
+    Logger.log('Unimplemented command', opt);
   }
   // Logger.debug('Encoded as',data.toString('hex'));
   return data;
@@ -1058,7 +1088,7 @@ function encodeAMF0Data(opt) {
         data = Buffer.concat([data, amf0EncodeOne(opt[n])]);
     });
   } else {
-    Logger.error('Unknown data', opt);
+    Logger.log('Unimplemented data', opt);
   }
   // Logger.debug('Encoded as',data.toString('hex'));
   return data;
@@ -1086,7 +1116,7 @@ function decodeAMF3Cmd(dbuf) {
       }
     });
   } else {
-    Logger.error('Unknown command', resp);
+    Logger.log('Unimplemented command', resp);
   }
   return resp;
 }
@@ -1105,7 +1135,7 @@ function encodeAMF3Cmd(opt) {
         data = Buffer.concat([data, amf3EncodeOne(opt[n])]);
     });
   } else {
-    Logger.error('Unknown command', opt);
+    Logger.log('Unimplemented command', opt);
   }
   return data;
 }
@@ -1115,6 +1145,7 @@ module.exports = {
   encodeAmf3Cmd: encodeAMF3Cmd,
   decodeAmf0Cmd: decodeAMF0Cmd,
   encodeAmf0Cmd: encodeAMF0Cmd,
+  encodeAmf0Call: encodeAMF0Call,
   decodeAmf0Data: decodeAmf0Data,
   encodeAmf0Data: encodeAMF0Data,
   amfType: amfType,
