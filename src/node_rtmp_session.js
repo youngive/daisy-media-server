@@ -1214,7 +1214,6 @@ class NodeRtmpSession {
     this.sendWindowACK(2500000);
     this.setPeerBandwidth(2500000, 2);
     this.setChunkSize(this.outChunkSize);
-    //this.accpetConnection(invokeMessage.transId);
     this.bitrateCache = {
       intervalMs: 1000,
       last_update: this.startTimestamp,

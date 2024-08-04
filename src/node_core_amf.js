@@ -62,21 +62,21 @@ const amf0dRules = {
   0x11: amf0decSwitchAmf3
 };
 
-var amf0eRules = {
-  "longstring":       amf0encLongString,
-  "string":       amf0encString,
-  "integer":      amf0encNumber,
-  "double":       amf0encNumber,
-  "xml":          amf0encXmlDoc,
-  "object":       amf0encObject,
-  "array":        amf0encArray,
-  "sarray":       amf0encSArray,
-  "binary":       amf0encString,
-  "date":         amf0encDate,
-  "true":         amf0encBool,
-  "false":        amf0encBool,
-  "undefined":    amf0encUndefined,
-  "null":         amf0encNull
+const amf0eRules = {
+  'longstring':   amf0encLongString,
+  'string':       amf0encString,
+  'integer':      amf0encNumber,
+  'double':       amf0encNumber,
+  'xml':          amf0encXmlDoc,
+  'object':       amf0encObject,
+  'array':        amf0encArray,
+  'sarray':       amf0encSArray,
+  'binary':       amf0encString,
+  'date':         amf0encDate,
+  'true':         amf0encBool,
+  'false':        amf0encBool,
+  'undefined':    amf0encUndefined,
+  'null':         amf0encNull
 };
 
 function amfType(o) {
