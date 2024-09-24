@@ -948,9 +948,6 @@ class NodeRtmpSession {
       case '$':
         this.onDollar(invokeMessage);
         break;
-      case '₽':
-        this.onRuble(invokeMessage);
-        break;
       case '_SCD':
         this.onSCD(invokeMessage);
         break;
@@ -1275,12 +1272,6 @@ class NodeRtmpSession {
 
   onDollar(invokeMessage) {
     context.nodeEvent.emit('$', this.id, invokeMessage.methodName, invokeMessage.descr, invokeMessage.calledRoomId, invokeMessage.args, invokeMessage.uid, function(result) {
-      this.respondCmd(invokeMessage.transId, result);
-    }.bind(this));
-  }
-
-  onRuble(invokeMessage) {
-    context.nodeEvent.emit('₽', this.id, invokeMessage.data, function(result) {
       this.respondCmd(invokeMessage.transId, result);
     }.bind(this));
   }

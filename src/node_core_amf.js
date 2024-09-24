@@ -956,7 +956,6 @@ const rtmpCmdCode = {
   'onFCPublish': ['transId', 'cmdObj', 'info'],
   'connect': ['transId', 'cmdObj', 'uid', 'sid', 'ticket', 'hwid'],
   '$': ['transId', 'cmdObj', 'methodName', 'descr', 'calledRoomId', 'args', 'uid'],
-  '₽': ['transId', 'cmdObj', 'data'],
   '_SOO': ['transId', 'cmdObj', 'soName', 'opName', 'args'],
   '__resolve': ['transId', 'cmdObj', 'name'],
   '_LS': ['transId', 'cmdObj', 'descriptor', 'startPoint', 'startState'],
