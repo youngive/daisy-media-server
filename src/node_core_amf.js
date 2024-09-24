@@ -535,8 +535,8 @@ function amf0decDate(buf) {
 function amf0encDate(ts) {
   let buf = Buffer.alloc(11);
   buf.writeUInt8(0x0B, 0);
-  buf.writeInt16BE(0, 1);
-  buf.writeDoubleBE(ts, 3);
+  buf.writeDoubleBE(ts, 1);
+  buf.writeInt16BE(0, 9);
   return buf;
 }
 
@@ -648,10 +648,12 @@ function amf0encUString(str) {
  * @returns {Buffer}
  */
 function amf0encString(str) {
-  let buf = Buffer.alloc(3);
-  buf.writeUInt8(0x02, 0);
-  buf.writeUInt16BE(str.length, 1);
-  return Buffer.concat([buf, Buffer.from(str, 'utf8')]);
+    let buf = Buffer.alloc(3);
+    let data = Buffer.from(str, "utf8");
+
+    buf.writeUInt8(0x02, 0);
+    buf.writeUInt16BE(data.length, 1);
+    return Buffer.concat([buf, data]);
 }
 
 
@@ -954,6 +956,7 @@ const rtmpCmdCode = {
   'onFCPublish': ['transId', 'cmdObj', 'info'],
   'connect': ['transId', 'cmdObj', 'uid', 'sid', 'ticket', 'hwid'],
   '$': ['transId', 'cmdObj', 'methodName', 'descr', 'calledRoomId', 'args', 'uid'],
+  '₽': ['transId', 'cmdObj', 'data'],
   '_SOO': ['transId', 'cmdObj', 'soName', 'opName', 'args'],
   '__resolve': ['transId', 'cmdObj', 'name'],
   '_LS': ['transId', 'cmdObj', 'descriptor', 'startPoint', 'startState'],
@@ -962,6 +965,8 @@ const rtmpCmdCode = {
   '_SCA': ['transId', 'cmdObj', 'methodName', 'data'],
   '_NSF': ['transId', 'cmdObj'],
   '_SCD': ['transId', 'cmdObj'],
+  '_RCD': ['transId', 'cmdObj'],
+  '_SCT': ['transId', 'cmdObj', 'data'],
   '_P': ['transId', 'cmdObj', 'point', 'tweenId', 'emitEvent'],
   'createStream': ['transId', 'cmdObj'],
   'close': ['transId', 'cmdObj'],

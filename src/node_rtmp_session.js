@@ -948,8 +948,17 @@ class NodeRtmpSession {
       case '$':
         this.onDollar(invokeMessage);
         break;
+      case '₽':
+        this.onRuble(invokeMessage);
+        break;
       case '_SCD':
         this.onSCD(invokeMessage);
+        break;
+      case '_RCD':
+        this.onRCD(invokeMessage);
+        break;
+      case '_SCT':
+        this.onSCT(invokeMessage);
         break;
       case 'releaseStream':
         break;
@@ -1178,14 +1187,14 @@ class NodeRtmpSession {
   call(methodName, ...args) {
     let opt = {
       cmd: methodName,
-      transId: 0,
-      cmdObj: null
+      transId: 0
     };
 
-    // Добавляем ключи для каждого полученного аргумента
-    args.slice(1).forEach((arg, index) => {
+    // Добавляем ключи для каждого аргумента
+    args.forEach((arg, index) => {
       opt[`gen${index + 1}`] = arg;
     });
+
 
     this.sendCallMessage(0, opt);
   }
@@ -1270,8 +1279,26 @@ class NodeRtmpSession {
     }.bind(this));
   }
 
+  onRuble(invokeMessage) {
+    context.nodeEvent.emit('₽', this.id, invokeMessage.data, function(result) {
+      this.respondCmd(invokeMessage.transId, result);
+    }.bind(this));
+  }
+
   onSCD(invokeMessage) {
     context.nodeEvent.emit('_SCD', this.id, function(result) {
+      this.respondCmd(invokeMessage.transId, result);
+    }.bind(this));
+  }
+
+  onRCD(invokeMessage) {
+    context.nodeEvent.emit('_RCD', this.id, function(result) {
+      this.respondCmd(invokeMessage.transId, result);
+    }.bind(this));
+  }
+
+  onSCT(invokeMessage) {
+    context.nodeEvent.emit('_SCT', this.id, invokeMessage.data, function(result) {
       this.respondCmd(invokeMessage.transId, result);
     }.bind(this));
   }

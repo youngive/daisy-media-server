@@ -14,7 +14,7 @@ const NodeFissionServer = require('./node_fission_server');
 const context = require('./node_core_ctx');
 const Package = require('../package.json');
 
-class NodeMediaServer {
+class DaisyMediaServer {
   constructor(config) {
     this.config = config;
   }
@@ -117,4 +117,4 @@ class NodeMediaServer {
   }
 }
 
-module.exports = NodeMediaServer;
+module.exports = DaisyMediaServer;
