@@ -238,6 +238,7 @@ class NodeRtmpSession {
 
   disconnect() {
     // Logger.log('onDisconnect');
+    this.call("_RCD");
     this.stop();
   }
   
@@ -954,9 +955,9 @@ class NodeRtmpSession {
       case '_RCD':
         this.onRCD(invokeMessage);
         break;
-      case '_SCT':
-        this.onSCT(invokeMessage);
-        break;
+        case '_SCT':
+          this.onSCT(invokeMessage);
+          break;
       case 'releaseStream':
         break;
       case 'FCPublish':
@@ -1044,20 +1045,16 @@ class NodeRtmpSession {
     packet.header.type = RTMP_TYPE_INVOKE;
     packet.header.stream_id = sid;
 
-    // Формирование объекта rtmpCmdCall на основе opt
     let rtmpCmdCall = {};
 
-    // Добавляем opt.cmd как ключ в rtmpCmdCall
     rtmpCmdCall[opt.cmd] = [];
 
-    // Добавляем остальные свойства из opt в массив значений под ключом opt.cmd
     for (let key in opt) {
-      if (key !== 'cmd') { // Пропускаем ключ 'cmd'
+      if (key !== 'cmd') {
         rtmpCmdCall[opt.cmd].push(key);
       }
     }
 
-    // Используем AMF.encodeAmf0Cmd для кодирования опций и rtmpCmdDecode
     packet.payload = AMF.encodeAmf0Call(opt, rtmpCmdCall);
 
     packet.header.length = packet.payload.length;
@@ -1184,12 +1181,12 @@ class NodeRtmpSession {
   call(methodName, ...args) {
     let opt = {
       cmd: methodName,
-      transId: 0
+      transId: 0,
+      prop0: null
     };
 
-    // Добавляем ключи для каждого аргумента
     args.forEach((arg, index) => {
-      opt[`gen${index + 1}`] = arg;
+      opt[`prop${index + 1}`] = arg;
     });
 
 
@@ -1248,7 +1245,7 @@ class NodeRtmpSession {
   onLS(invokeMessage) {
     console.log(JSON.stringify(invokeMessage));
     context.nodeEvent.emit('_LS', this.id, invokeMessage.descriptor, invokeMessage.startPoint, invokeMessage.startState, function(result) {
-      this.respondCmd(invokeMessage.transId, result);
+      this.call("_LS", result);
     }.bind(this));
   }
 
@@ -1271,8 +1268,14 @@ class NodeRtmpSession {
   }
 
   onDollar(invokeMessage) {
-    context.nodeEvent.emit('$', this.id, invokeMessage.methodName, invokeMessage.descr, invokeMessage.calledRoomId, invokeMessage.args, invokeMessage.uid, function(result) {
-      this.respondCmd(invokeMessage.transId, result);
+    context.nodeEvent.emit('$', this.id, invokeMessage.methodName, invokeMessage.descr, invokeMessage.calledRoomId, invokeMessage.args, invokeMessage.uid, function(result, uid) {
+      let obj = {
+            0: result,
+            length: 1,
+            callback_uid: uid
+        };
+
+      this.call('_B', obj);
     }.bind(this));
   }
 
